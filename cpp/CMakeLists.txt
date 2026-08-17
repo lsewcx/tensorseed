@@ -11,3 +11,17 @@ pybind11_add_module(
     _core
     binding/binding.cpp
 )
+
+target_include_directories(
+    _core
+    PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+if(MSVC)
+    target_compile_options(
+        _core
+        PRIVATE
+        /utf-8
+    )
+endif()
