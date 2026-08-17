@@ -7,4 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(pybind11 REQUIRED)
 
-target_link_libraries(tensorseed pybind11_all_do_not_use)
+pybind11_add_module(
+    _core
+    binding/binding.cpp
+)
