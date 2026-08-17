@@ -1,69 +1,55 @@
+"""Quick start and functional verification script for TensorSeed."""
+
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 
-module_path: Path = (
-    r"C:\code\c\TensorSeed\cpp\build\build\Release"
-)
+# Ensure `python/` is in sys.path
+_PYTHON_ROOT = Path(__file__).resolve().parent
+if str(_PYTHON_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PYTHON_ROOT))
 
-sys.path.insert(0, str(module_path))
-
-import _core
+import tensorseed as ts
 
 
 def main() -> None:
-    """验证 Python 能够创建、读取并操作 C++ Tensor。"""
-    print("====== 1. 基础 1D Tensor 测试 ======")
-    data: list[float] = [1.5, 2.0, 3.0]
-    tensor: _core.Tensor = _core.Tensor(data)
+    """Run interactive quick-verification suite."""
+    print("========================================")
+    print("       TensorSeed Quick Demo            ")
+    print("========================================")
 
-    assert tensor.tolist() == data, f"Expected {data}, got {tensor.tolist()}"
-    assert len(tensor) == 3
-    assert tensor.shape == [3]
-    assert tensor.strides == [1]
-    assert tensor.ndim == 1
-    assert tensor.is_contiguous is True
-    print(f"1D Tensor: {tensor}")
-    print(f"tolist: {tensor.tolist()}, size: {len(tensor)}")
+    # 1. 基础 Tensor 创建与元数据
+    t1 = ts.tensor([1.5, 2.0, 3.0])
+    print(f"\n[1] 1D Tensor: {t1}")
+    print(f"    shape: {t1.shape}, strides: {t1.strides}, ndim: {t1.ndim}, numel: {len(t1)}")
+    print(f"    tolist: {t1.tolist()}")
+    assert t1.tolist() == [1.5, 2.0, 3.0]
 
-    print("\n====== 2. Buffer Protocol 测试 ======")
-    mv = memoryview(tensor)
-    assert mv.tolist() == data
-    print(f"Memoryview 正常工作: {list(mv)}")
+    # 2. Buffer Protocol (memoryview)
+    mv = memoryview(t1)
+    print(f"\n[2] Buffer Protocol (memoryview): {list(mv)}")
+    assert mv.tolist() == [1.5, 2.0, 3.0]
 
-    print("\n====== 3. 多维 Tensor 与 View 变换测试 ======")
-    t_2d: _core.Tensor = _core.Tensor.empty([2, 3], _core.dtype.float32)
-    assert t_2d.shape == [2, 3]
-    assert t_2d.strides == [3, 1]
-    assert t_2d.ndim == 2
-    assert len(t_2d) == 6
-    print(f"2D Empty Tensor: {t_2d}")
+    # 3. 多维 Tensor 与 View 变换
+    t2 = ts.empty([2, 3])
+    print(f"\n[3] 2D Empty Tensor: {t2}")
+    t2_view = t2.view([3, 2])
+    print(f"    View (3x2): {t2_view}")
+    t2_infer = t2.view([-1, 1])
+    print(f"    Inferred View (-1, 1 -> 6x1): {t2_infer}")
 
-    # View 变换
-    t_view = t_2d.view([3, 2])
-    assert t_view.shape == [3, 2]
-    assert t_view.strides == [2, 1]
-    print(f"View [3, 2]: {t_view}")
+    # 4. 零拷贝转置与连续化
+    t2_t = t2.t()
+    print(f"\n[4] Transposed (Zero-copy, non-contiguous): {t2_t}")
+    assert t2_t.is_contiguous is False
+    t2_c = t2_t.contiguous()
+    print(f"    Contiguous copy: {t2_c}")
+    assert t2_c.is_contiguous is True
 
-    # 支持 -1 自动推导
-    t_infer = t_2d.view([-1, 1])
-    assert t_infer.shape == [6, 1]
-    print(f"View [-1, 1]: {t_infer}")
-
-    print("\n====== 4. 零拷贝转置与连续化测试 ======")
-    t_transposed = t_2d.t()
-    assert t_transposed.shape == [3, 2]
-    assert t_transposed.strides == [1, 3]  # stride 交换，零拷贝
-    assert t_transposed.is_contiguous is False
-    print(f"Transposed (非连续): {t_transposed}")
-
-    # 连续化
-    t_contig = t_transposed.contiguous()
-    assert t_contig.shape == [3, 2]
-    assert t_contig.strides == [2, 1]  # 连续内存 stride 重新对齐
-    assert t_contig.is_contiguous is True
-    print(f"Contiguous 副本: {t_contig}")
-
-    print("\n[OK] All Tensor unit tests passed successfully!")
+    print("\n========================================")
+    print("[SUCCESS] Quick verification completed!")
+    print("========================================")
 
 
 if __name__ == "__main__":

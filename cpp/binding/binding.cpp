@@ -1,66 +1,80 @@
-#include "../include/tensorseed/tensor.hpp"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <tensorseed/tensor.hpp>
 
 namespace py = pybind11;
 using namespace tensorseed;
 
 PYBIND11_MODULE(_core, m) {
-  m.doc() = "TensorSeed PyTorch-style Tensor Engine";
+  m.doc() = "TensorSeed: High-performance PyTorch-style Tensor Engine in C++";
 
-  py::enum_<ScalarType>(m, "dtype")
-      .value("float32", ScalarType::Float32)
-      .value("float64", ScalarType::Float64)
-      .value("int32", ScalarType::Int32)
-      .value("int64", ScalarType::Int64)
+  py::enum_<ScalarType>(m, "dtype", "Data types supported by TensorSeed")
+      .value("float32", ScalarType::Float32, "32-bit floating point")
+      .value("float64", ScalarType::Float64, "64-bit floating point")
+      .value("int32", ScalarType::Int32, "32-bit signed integer")
+      .value("int64", ScalarType::Int64, "64-bit signed integer")
+      .value("uint8", ScalarType::UInt8, "8-bit unsigned integer")
       .export_values();
 
-  py::class_<Tensor>(m, "Tensor", py::buffer_protocol())
+  py::class_<Tensor>(m, "Tensor", py::buffer_protocol(),
+                     "A multi-dimensional array with strided view capabilities")
       // 从 1D 列表构造
       .def(py::init([](const std::vector<float> &data) {
              return Tensor::from_vector(data);
            }),
-           py::arg("data"))
+           py::arg("data"), "Construct a 1D Tensor from a float list")
 
       // empty 工厂函数
       .def_static("empty", &Tensor::empty, py::arg("shape"),
-                  py::arg("dtype") = ScalarType::Float32)
+                  py::arg("dtype") = ScalarType::Float32,
+                  "Create an uninitialized Tensor with given shape and dtype")
 
-      // 属性
-      .def_property_readonly("shape", &Tensor::shape)
-      .def_property_readonly("strides", &Tensor::strides)
-      .def_property_readonly("ndim", &Tensor::ndim)
-      .def_property_readonly("is_contiguous", &Tensor::is_contiguous)
-      .def("__len__", &Tensor::numel)
-      .def("__repr__", &Tensor::to_string)
+      // 核心属性
+      .def_property_readonly("shape", &Tensor::shape, "List of dimension sizes")
+      .def_property_readonly("strides", &Tensor::strides,
+                             "List of strides for each dimension")
+      .def_property_readonly("ndim", &Tensor::ndim,
+                             "Number of dimensions (rank)")
+      .def_property_readonly(
+          "is_contiguous", &Tensor::is_contiguous,
+          "True if the memory is contiguous in standard C-order")
+      .def("__len__", &Tensor::numel, "Total number of elements in the tensor")
+      .def("__repr__", &Tensor::to_string,
+           "String representation of the tensor")
 
-      // 视图变换算子 (零拷贝)
-      .def("transpose", &Tensor::transpose, py::arg("dim0"), py::arg("dim1"))
-      .def("t", &Tensor::t)
-      .def("view", &Tensor::view, py::arg("shape"))
-      .def("contiguous", &Tensor::contiguous)
+      // 视图变换算子 (零拷贝 Zero-copy)
+      .def("transpose", &Tensor::transpose, py::arg("dim0"), py::arg("dim1"),
+           "Return a new tensor with dimensions dim0 and dim1 swapped "
+           "(zero-copy)")
+      .def("t", &Tensor::t, "Short-hand 2D matrix transpose (zero-copy)")
+      .def("view", &Tensor::view, py::arg("shape"),
+           "Return a new tensor with the specified shape (zero-copy, requires "
+           "contiguous memory)")
+      .def("contiguous", &Tensor::contiguous,
+           "Return a contiguous in memory copy of tensor if not contiguous; "
+           "self otherwise")
 
       // Buffer protocol 支持 (支持 memoryview / numpy.asarray 等)
       .def_buffer([](Tensor &t) -> py::buffer_info {
         std::vector<py::ssize_t> shape(t.shape().begin(), t.shape().end());
         std::vector<py::ssize_t> strides;
         for (auto s : t.strides()) {
-          strides.push_back(s * static_cast<py::ssize_t>(element_size(t.dtype())));
+          strides.push_back(s *
+                            static_cast<py::ssize_t>(element_size(t.dtype())));
         }
-        return py::buffer_info(
-            t.data_ptr<float>(),
-            sizeof(float),
-            py::format_descriptor<float>::format(),
-            static_cast<py::ssize_t>(t.ndim()),
-            shape,
-            strides
-        );
+        return py::buffer_info(t.data_ptr<float>(), sizeof(float),
+                               py::format_descriptor<float>::format(),
+                               static_cast<py::ssize_t>(t.ndim()), shape,
+                               strides);
       })
 
       // 导出数据为 Python 列表
-      .def("tolist", [](const Tensor &t) {
-        Tensor c = t.is_contiguous() ? t : t.contiguous();
-        const float *ptr = c.data_ptr<float>();
-        return std::vector<float>(ptr, ptr + c.numel());
-      });
+      .def(
+          "tolist",
+          [](const Tensor &t) {
+            Tensor c = t.is_contiguous() ? t : t.contiguous();
+            const float *ptr = c.data_ptr<float>();
+            return std::vector<float>(ptr, ptr + c.numel());
+          },
+          "Return the tensor data as a flat Python list of floats");
 }

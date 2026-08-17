@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/cpp/include",
+                "${workspaceFolder}/cpp/binding",
+                "${workspaceFolder}/.venv/Include",
+                "${userHome}/.conan2/p/**/include",
+                "${env:APPDATA}/uv/python/**/include",
+                "${env:LOCALAPPDATA}/Programs/Python/**/include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": "cl.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-msvc-x64"
+        }
+    ],
+    "version": 4
+}

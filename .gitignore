@@ -1,4 +1,31 @@
+# Virtual Environment & Package Managers
+.venv/
 uv.lock
-.venv
-cpp/build
+
+# Python Build & Cache Artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.so
+*.dylib
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# C++ / CMake Build Artifacts
+cpp/build/
 cpp/CMakeUserPresets.json
+compile_commands.json
+*.obj
+*.lib
+*.exp
+*.ilk
+*.pdb
+
+# IDE & Editor Configs
+.vs/
+*.swp
+*.swo
+.DS_Store

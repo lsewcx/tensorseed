@@ -7,3 +7,20 @@ requires-python = ">=3.13"
 dependencies = [
     "conan>=2.31.2",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["python"]
+
+[tool.pyright]
+extraPaths = ["python"]
+
+[tool.basedpyright]
+extraPaths = ["python"]
+
+

@@ -119,9 +119,9 @@ public:
       data_ = std::shared_ptr<uint8_t[]>(static_cast<uint8_t *>(external_ptr),
                                          deleter);
     } else {
-      // 默认无所有权 deleter
+      // 默认无所有权 deleter (外部内存借用)
       data_ = std::shared_ptr<uint8_t[]>(static_cast<uint8_t *>(external_ptr),
-                                         [](void *) {});
+                                         [](uint8_t *) {});
     }
   }
   void *data() const { return data_.get(); }
@@ -355,4 +355,4 @@ private:
   std::shared_ptr<TensorImpl> impl_{nullptr};
 };
 
-}; // namespace tensorseed
+} // namespace tensorseed

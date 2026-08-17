@@ -1,0 +1,9 @@
+CompileFlags:
+  CompilationDatabase: "cpp/build/build"
+  Add:
+    - -std=c++17
+    - -I./cpp/include
+    - -I./cpp/binding
+    - -I./.venv/Include
+    - -fms-compatibility
+    - -fms-extensions
