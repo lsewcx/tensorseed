@@ -255,6 +255,38 @@ namespace tensorseed
       return t;
     }
 
+    // 构造全 1 Tensor
+    static Tensor ones(const std::vector<int64_t> &shape,
+                       ScalarType dtype = ScalarType::Float32)
+    {
+      Tensor t = Tensor::empty(shape, dtype);
+      int64_t total = t.numel();
+      if (total == 0)
+        return t;
+
+      switch (dtype)
+      {
+      case ScalarType::Float32:
+        std::fill_n(t.data_ptr<float>(), total, 1.0f);
+        break;
+      case ScalarType::Float64:
+        std::fill_n(t.data_ptr<double>(), total, 1.0);
+        break;
+      case ScalarType::Int32:
+        std::fill_n(t.data_ptr<int32_t>(), total, 1);
+        break;
+      case ScalarType::Int64:
+        std::fill_n(t.data_ptr<int64_t>(), total, 1LL);
+        break;
+      case ScalarType::UInt8:
+        std::fill_n(t.data_ptr<uint8_t>(), total, static_cast<uint8_t>(1));
+        break;
+      default:
+        throw std::invalid_argument("Unsupported dtype in ones()");
+      }
+      return t;
+    }
+
     // 从 std::vector 构造 1D Tensor (深拷贝数据)
     template <typename T>
     static Tensor from_vector(const std::vector<T> &data)

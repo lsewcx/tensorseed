@@ -56,11 +56,17 @@ def zeros(shape: Sequence[int], dtype: _core.dtype = _core.dtype.float32) -> Ten
     return Tensor.zeros(shape, dtype)
 
 
+def ones(shape: Sequence[int], dtype: _core.dtype = _core.dtype.float32) -> Tensor:
+    """Create a ones-initialized Tensor with the specified shape and dtype."""
+    return Tensor.ones(shape, dtype)
+
+
 __all__ = [
     "Tensor",
     "dtype",
     "empty",
     "zeros",
+    "ones",
     "tensor",
     "float32",
     "float64",
