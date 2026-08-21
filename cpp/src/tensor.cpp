@@ -159,6 +159,89 @@ Tensor Tensor::contiguous() const {
   return result;
 }
 
+Tensor Tensor::select(int64_t dim, int64_t index) const {
+  int64_t rank = ndim();
+  if (dim < 0)
+    dim += rank;
+  if (dim < 0 || dim >= rank) {
+    throw std::out_of_range("Dimension out of range in select()");
+  }
+
+  int64_t dim_size = shape()[dim];
+  if (index < 0)
+    index += dim_size;
+  if (index < 0 || index >= dim_size) {
+    throw std::out_of_range("Index out of range in select()");
+  }
+
+  int64_t new_offset = storage_offset() + index * strides()[dim];
+  std::vector<int64_t> new_shape, new_strides;
+  for (int64_t d = 0; d < rank; ++d) {
+    if (d != dim) {
+      new_shape.push_back(shape()[d]);
+      new_strides.push_back(strides()[d]);
+    }
+  }
+
+  auto new_impl = std::make_shared<TensorImpl>(
+      impl_->storage(), new_offset, new_shape, new_strides, dtype());
+  return Tensor(new_impl);
+}
+
+Tensor Tensor::slice(int64_t dim, int64_t start, int64_t end, int64_t step) const {
+  int64_t rank = ndim();
+  if (dim < 0)
+    dim += rank;
+  if (dim < 0 || dim >= rank) {
+    throw std::out_of_range("Dimension out of range in slice()");
+  }
+  if (step <= 0) {
+    throw std::invalid_argument("slice step must be positive");
+  }
+
+  int64_t dim_size = shape()[dim];
+  if (start < 0)
+    start += dim_size;
+  if (end < 0)
+    end += dim_size;
+  start = std::max<int64_t>(0, std::min(start, dim_size));
+  end = std::max<int64_t>(0, std::min(end, dim_size));
+
+  int64_t slice_len = (end > start) ? ((end - start + step - 1) / step) : 0;
+
+  int64_t new_offset = storage_offset() + start * strides()[dim];
+  auto new_shape = shape();
+  auto new_strides = strides();
+  new_shape[dim] = slice_len;
+  new_strides[dim] = strides()[dim] * step;
+
+  auto new_impl = std::make_shared<TensorImpl>(
+      impl_->storage(), new_offset, new_shape, new_strides, dtype());
+  return Tensor(new_impl);
+}
+
+double Tensor::item() const {
+  if (numel() != 1) {
+    throw std::runtime_error(
+        "item() only supports tensors with exactly 1 element, but got " +
+        std::to_string(numel()) + " elements");
+  }
+  switch (dtype()) {
+  case ScalarType::Float32:
+    return static_cast<double>(*data_ptr<float>());
+  case ScalarType::Float64:
+    return *data_ptr<double>();
+  case ScalarType::Int32:
+    return static_cast<double>(*data_ptr<int32_t>());
+  case ScalarType::Int64:
+    return static_cast<double>(*data_ptr<int64_t>());
+  case ScalarType::UInt8:
+    return static_cast<double>(*data_ptr<uint8_t>());
+  default:
+    throw std::runtime_error("Unsupported dtype in item()");
+  }
+}
+
 std::string Tensor::to_string() const {
   std::ostringstream oss;
   oss << "Tensor(shape=[";

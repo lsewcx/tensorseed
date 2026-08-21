@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <algorithm>
 #include <cstdint>
@@ -74,6 +74,11 @@ public:
   Tensor t() const;
   Tensor view(const std::vector<int64_t> &new_shape) const;
   Tensor contiguous() const;
+  Tensor select(int64_t dim, int64_t index) const;
+  Tensor slice(int64_t dim, int64_t start, int64_t end, int64_t step = 1) const;
+
+  // 标量提取 (针对 1 元素张量)
+  double item() const;
 
   std::string to_string() const;
 

@@ -63,6 +63,206 @@ PYBIND11_MODULE(_core, m)
       .def("contiguous", &Tensor::contiguous,
            "Return a contiguous in memory copy of tensor if not contiguous; "
            "self otherwise")
+      .def("select", &Tensor::select, py::arg("dim"), py::arg("index"),
+           "Select a slice along dim (reduces rank by 1)")
+      .def("slice", &Tensor::slice, py::arg("dim"), py::arg("start"),
+           py::arg("end"), py::arg("step") = 1,
+           "Return a sliced tensor view along dim")
+      .def("item", &Tensor::item,
+           "Return the value of this tensor as a standard Python number")
+
+      // __getitem__ 索引与切片支持
+      .def(
+          "__getitem__",
+          [](const Tensor &self, py::object key) -> py::object
+          {
+            if (py::isinstance<py::tuple>(key))
+            {
+              py::tuple tup = key.cast<py::tuple>();
+              Tensor curr = self;
+              int64_t dim_offset = 0;
+              for (size_t i = 0; i < tup.size(); ++i)
+              {
+                py::object elem = tup[i];
+                if (dim_offset >= curr.ndim())
+                {
+                  throw py::index_error("Too many indices for tensor");
+                }
+                if (py::isinstance<py::int_>(elem))
+                {
+                  int64_t idx = elem.cast<int64_t>();
+                  curr = curr.select(dim_offset, idx);
+                }
+                else if (py::isinstance<py::slice>(elem))
+                {
+                  py::slice s = elem.cast<py::slice>();
+                  size_t start, stop, step, slicelength;
+                  if (!s.compute(curr.shape()[dim_offset], &start, &stop, &step, &slicelength))
+                  {
+                    throw py::error_already_set();
+                  }
+                  curr = curr.slice(dim_offset, start, stop, step);
+                  dim_offset++;
+                }
+                else
+                {
+                  throw py::type_error("Invalid index type inside tuple");
+                }
+              }
+              if (curr.ndim() == 0)
+              {
+                switch (curr.dtype())
+                {
+                case ScalarType::Float32:
+                  return py::cast(*curr.data_ptr<float>());
+                case ScalarType::Float64:
+                  return py::cast(*curr.data_ptr<double>());
+                case ScalarType::Int32:
+                  return py::cast(*curr.data_ptr<int32_t>());
+                case ScalarType::Int64:
+                  return py::cast(*curr.data_ptr<int64_t>());
+                case ScalarType::UInt8:
+                  return py::cast(*curr.data_ptr<uint8_t>());
+                default:
+                  throw std::runtime_error("Unsupported dtype");
+                }
+              }
+              return py::cast(curr);
+            }
+
+            if (py::isinstance<py::int_>(key))
+            {
+              int64_t idx = key.cast<int64_t>();
+              if (self.ndim() == 0)
+              {
+                throw py::index_error("Cannot index a 0D scalar tensor");
+              }
+              Tensor sub = self.select(0, idx);
+              if (self.ndim() == 1)
+              {
+                switch (sub.dtype())
+                {
+                case ScalarType::Float32:
+                  return py::cast(*sub.data_ptr<float>());
+                case ScalarType::Float64:
+                  return py::cast(*sub.data_ptr<double>());
+                case ScalarType::Int32:
+                  return py::cast(*sub.data_ptr<int32_t>());
+                case ScalarType::Int64:
+                  return py::cast(*sub.data_ptr<int64_t>());
+                case ScalarType::UInt8:
+                  return py::cast(*sub.data_ptr<uint8_t>());
+                default:
+                  throw std::runtime_error("Unsupported dtype");
+                }
+              }
+              return py::cast(sub);
+            }
+
+            if (py::isinstance<py::slice>(key))
+            {
+              if (self.ndim() == 0)
+              {
+                throw py::index_error("Cannot slice a 0D scalar tensor");
+              }
+              py::slice s = key.cast<py::slice>();
+              size_t start, stop, step, slicelength;
+              if (!s.compute(self.shape()[0], &start, &stop, &step, &slicelength))
+              {
+                throw py::error_already_set();
+              }
+              return py::cast(self.slice(0, start, stop, step));
+            }
+
+            throw py::type_error("Invalid index type, expected int, slice, or tuple");
+          })
+
+      // __setitem__ 原地修改支持
+      .def(
+          "__setitem__",
+          [](Tensor &self, py::object key, py::object val)
+          {
+            Tensor target = self;
+            if (py::isinstance<py::tuple>(key))
+            {
+              py::tuple tup = key.cast<py::tuple>();
+              int64_t dim_offset = 0;
+              for (size_t i = 0; i < tup.size(); ++i)
+              {
+                py::object elem = tup[i];
+                if (dim_offset >= target.ndim())
+                {
+                  throw py::index_error("Too many indices for tensor");
+                }
+                if (py::isinstance<py::int_>(elem))
+                {
+                  int64_t idx = elem.cast<int64_t>();
+                  target = target.select(dim_offset, idx);
+                }
+                else if (py::isinstance<py::slice>(elem))
+                {
+                  py::slice s = elem.cast<py::slice>();
+                  size_t start, stop, step, slicelength;
+                  if (!s.compute(target.shape()[dim_offset], &start, &stop, &step, &slicelength))
+                  {
+                    throw py::error_already_set();
+                  }
+                  target = target.slice(dim_offset, start, stop, step);
+                  dim_offset++;
+                }
+                else
+                {
+                  throw py::type_error("Invalid index type inside tuple");
+                }
+              }
+            }
+            else if (py::isinstance<py::int_>(key))
+            {
+              int64_t idx = key.cast<int64_t>();
+              target = target.select(0, idx);
+            }
+            else if (py::isinstance<py::slice>(key))
+            {
+              py::slice s = key.cast<py::slice>();
+              size_t start, stop, step, slicelength;
+              if (!s.compute(target.shape()[0], &start, &stop, &step, &slicelength))
+              {
+                throw py::error_already_set();
+              }
+              target = target.slice(0, start, stop, step);
+            }
+            else
+            {
+              throw py::type_error("Invalid index type, expected int, slice, or tuple");
+            }
+
+            if (target.numel() == 1)
+            {
+              switch (target.dtype())
+              {
+              case ScalarType::Float32:
+                *target.data_ptr<float>() = val.cast<float>();
+                break;
+              case ScalarType::Float64:
+                *target.data_ptr<double>() = val.cast<double>();
+                break;
+              case ScalarType::Int32:
+                *target.data_ptr<int32_t>() = val.cast<int32_t>();
+                break;
+              case ScalarType::Int64:
+                *target.data_ptr<int64_t>() = val.cast<int64_t>();
+                break;
+              case ScalarType::UInt8:
+                *target.data_ptr<uint8_t>() = val.cast<uint8_t>();
+                break;
+              default:
+                throw std::runtime_error("Unsupported dtype for assignment");
+              }
+              return;
+            }
+
+            throw std::runtime_error("Multi-element slice assignment is not yet supported");
+          })
 
       // Buffer protocol 支持 (支持 memoryview / numpy.asarray 等)
       .def_buffer([](Tensor &t) -> py::buffer_info

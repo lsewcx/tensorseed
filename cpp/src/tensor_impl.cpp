@@ -1,4 +1,4 @@
-﻿#include <numeric>
+#include <numeric>
 #include <utility>
 #include <tensorseed/tensor_impl.hpp>
 
@@ -30,8 +30,6 @@ TensorImpl::compute_contiguous_strides(const SizeVector &sizes) {
 }
 
 int64_t TensorImpl::numel() const {
-  if (sizes_.empty())
-    return 0;
   return std::accumulate(sizes_.begin(), sizes_.end(),
                          static_cast<int64_t>(1), std::multiplies<int64_t>());
 }
