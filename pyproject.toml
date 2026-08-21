@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "black>=26.5.1",
     "conan>=2.31.2",
 ]
 
@@ -20,7 +21,8 @@ pythonpath = ["python"]
 [tool.pyright]
 extraPaths = ["python"]
 
-[tool.basedpyright]
-extraPaths = ["python"]
+[tool.black]
+target-version = ["py313"]
+line-length = 88
 
 

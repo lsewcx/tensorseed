@@ -51,10 +51,16 @@ def tensor(data: Sequence[float]) -> Tensor:
     return Tensor(data)
 
 
+def zeros(shape: Sequence[int], dtype: _core.dtype = _core.dtype.float32) -> Tensor:
+    """Create a zero-initialized Tensor with the specified shape and dtype."""
+    return Tensor.zeros(shape, dtype)
+
+
 __all__ = [
     "Tensor",
     "dtype",
     "empty",
+    "zeros",
     "tensor",
     "float32",
     "float64",

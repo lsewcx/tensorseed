@@ -5,7 +5,8 @@
 namespace py = pybind11;
 using namespace tensorseed;
 
-PYBIND11_MODULE(_core, m) {
+PYBIND11_MODULE(_core, m)
+{
   m.doc() = "TensorSeed: High-performance PyTorch-style Tensor Engine in C++";
 
   py::enum_<ScalarType>(m, "dtype", "Data types supported by TensorSeed")
@@ -19,10 +20,13 @@ PYBIND11_MODULE(_core, m) {
   py::class_<Tensor>(m, "Tensor", py::buffer_protocol(),
                      "A multi-dimensional array with strided view capabilities")
       // 从 1D 列表构造
-      .def(py::init([](const std::vector<float> &data) {
-             return Tensor::from_vector(data);
-           }),
+      .def(py::init([](const std::vector<float> &data)
+                    { return Tensor::from_vector(data); }),
            py::arg("data"), "Construct a 1D Tensor from a float list")
+
+      .def_static("zeros", &Tensor::zeros, py::arg("shape"),
+                  py::arg("dtype") = ScalarType::Float32,
+                  "Create a zero-initialized Tensor with given shape and dtype")
 
       // empty 工厂函数
       .def_static("empty", &Tensor::empty, py::arg("shape"),
@@ -55,7 +59,8 @@ PYBIND11_MODULE(_core, m) {
            "self otherwise")
 
       // Buffer protocol 支持 (支持 memoryview / numpy.asarray 等)
-      .def_buffer([](Tensor &t) -> py::buffer_info {
+      .def_buffer([](Tensor &t) -> py::buffer_info
+                  {
         std::vector<py::ssize_t> shape(t.shape().begin(), t.shape().end());
         std::vector<py::ssize_t> strides;
         for (auto s : t.strides()) {
@@ -91,32 +96,38 @@ PYBIND11_MODULE(_core, m) {
         }
         return py::buffer_info(ptr, itemsize, format,
                                static_cast<py::ssize_t>(t.ndim()), shape,
-                               strides);
-      })
+                               strides); })
 
       // 导出数据为 Python 列表
       .def(
           "tolist",
-          [](const Tensor &t) -> py::object {
+          [](const Tensor &t) -> py::object
+          {
             Tensor c = t.is_contiguous() ? t : t.contiguous();
-            switch (c.dtype()) {
-            case ScalarType::Float32: {
+            switch (c.dtype())
+            {
+            case ScalarType::Float32:
+            {
               const float *ptr = c.data_ptr<float>();
               return py::cast(std::vector<float>(ptr, ptr + c.numel()));
             }
-            case ScalarType::Float64: {
+            case ScalarType::Float64:
+            {
               const double *ptr = c.data_ptr<double>();
               return py::cast(std::vector<double>(ptr, ptr + c.numel()));
             }
-            case ScalarType::Int32: {
+            case ScalarType::Int32:
+            {
               const int32_t *ptr = c.data_ptr<int32_t>();
               return py::cast(std::vector<int32_t>(ptr, ptr + c.numel()));
             }
-            case ScalarType::Int64: {
+            case ScalarType::Int64:
+            {
               const int64_t *ptr = c.data_ptr<int64_t>();
               return py::cast(std::vector<int64_t>(ptr, ptr + c.numel()));
             }
-            case ScalarType::UInt8: {
+            case ScalarType::UInt8:
+            {
               const uint8_t *ptr = c.data_ptr<uint8_t>();
               return py::cast(std::vector<uint8_t>(ptr, ptr + c.numel()));
             }

@@ -30,6 +30,26 @@ class TestTensorCreation:
         assert len(t) == 24
         assert t.is_contiguous is True
 
+    def test_zeros_factory(self) -> None:
+        # Default float32 zeros
+        t_f32 = ts.zeros((2, 3))
+        assert t_f32.shape == [2, 3]
+        assert t_f32.strides == [3, 1]
+        assert t_f32.is_contiguous is True
+        assert t_f32.tolist() == [0.0] * 6
+
+        # int32 zeros
+        t_i32 = ts.zeros([4], dtype=ts.int32)
+        assert t_i32.tolist() == [0, 0, 0, 0]
+
+        # float64 zeros
+        t_f64 = ts.zeros([2, 2], dtype=ts.float64)
+        assert t_f64.tolist() == [0.0, 0.0, 0.0, 0.0]
+
+        # uint8 zeros
+        t_u8 = ts.zeros([3], dtype=ts.uint8)
+        assert t_u8.tolist() == [0, 0, 0]
+
     def test_dtype_variants(self) -> None:
         t_f32 = ts.empty([2, 2], dtype=ts.float32)
         assert "dtype=float32" in repr(t_f32)
