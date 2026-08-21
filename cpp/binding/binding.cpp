@@ -32,10 +32,13 @@ PYBIND11_MODULE(_core, m)
       .def_static("empty", &Tensor::empty, py::arg("shape"),
                   py::arg("dtype") = ScalarType::Float32,
                   "Create an uninitialized Tensor with given shape and dtype")
-                  
+
       .def_static("ones", &Tensor::ones, py::arg("shape"),
                   py::arg("dtype") = ScalarType::Float32,
                   "Create a ones-initialized Tensor with given shape and dtype")
+      .def_static("randn", &Tensor::randn, py::arg("shape"),
+                  py::arg("dtype") = ScalarType::Float32,
+                  "Create a Tensor filled with random numbers from a standard normal distribution")
       // 核心属性
       .def_property_readonly("shape", &Tensor::shape, "List of dimension sizes")
       .def_property_readonly("strides", &Tensor::strides,

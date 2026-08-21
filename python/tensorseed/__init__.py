@@ -61,6 +61,11 @@ def ones(shape: Sequence[int], dtype: _core.dtype = _core.dtype.float32) -> Tens
     return Tensor.ones(shape, dtype)
 
 
+def randn(shape: Sequence[int], dtype: _core.dtype = _core.dtype.float32) -> Tensor:
+    """Create a Tensor filled with random numbers from a standard normal distribution."""
+    return Tensor.randn(shape, dtype)
+
+
 __all__ = [
     "Tensor",
     "dtype",
@@ -68,6 +73,7 @@ __all__ = [
     "zeros",
     "ones",
     "tensor",
+    "randn",
     "float32",
     "float64",
     "int32",

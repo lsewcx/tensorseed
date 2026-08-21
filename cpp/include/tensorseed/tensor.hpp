@@ -9,6 +9,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <random>
 
 namespace tensorseed
 {
@@ -252,6 +253,46 @@ namespace tensorseed
       {
         std::memset(t.data_ptr<uint8_t>(), 0, t.numel() * element_size(dtype));
       }
+      return t;
+    }
+
+    // 构造服从标准正态分布 N(0, 1) 的随机 Tensor
+    static Tensor randn(const std::vector<int64_t> &shape,
+                        ScalarType dtype = ScalarType::Float32)
+    {
+      // randn 只支持浮点类型（float32 和 float64）
+      if (dtype != ScalarType::Float32 && dtype != ScalarType::Float64)
+      {
+        throw std::invalid_argument("randn only supports floating-point dtypes (float32, float64)");
+      }
+
+      Tensor t = Tensor::empty(shape, dtype);
+      int64_t total = t.numel();
+      if (total == 0)
+        return t;
+
+      // 使用 thread_local 随机数引擎（避免重复创建开销，且线程安全）
+      thread_local std::mt19937 gen(std::random_device{}());
+
+      if (dtype == ScalarType::Float32)
+      {
+        std::normal_distribution<float> dist(0.0f, 1.0f);
+        float *ptr = t.data_ptr<float>();
+        for (int64_t i = 0; i < total; ++i)
+        {
+          ptr[i] = dist(gen);
+        }
+      }
+      else // Float64
+      {
+        std::normal_distribution<double> dist(0.0, 1.0);
+        double *ptr = t.data_ptr<double>();
+        for (int64_t i = 0; i < total; ++i)
+        {
+          ptr[i] = dist(gen);
+        }
+      }
+
       return t;
     }
 

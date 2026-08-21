@@ -74,6 +74,31 @@ class TestTensorCreation:
         t_u8 = ts.ones([3], dtype=ts.uint8)
         assert t_u8.tolist() == [1, 1, 1]
 
+    def test_randn_factory(self) -> None:
+        # Default float32 randn
+        t_f32 = ts.randn((2, 3))
+        assert t_f32.shape == [2, 3]
+        assert t_f32.strides == [3, 1]
+        assert t_f32.is_contiguous is True
+        assert len(t_f32.tolist()) == 6
+
+        # float64 randn
+        t_f64 = ts.randn([2, 2], dtype=ts.float64)
+        assert t_f64.shape == [2, 2]
+        assert len(t_f64.tolist()) == 4
+
+        # Statistical sanity check (mean ~ 0, std ~ 1)
+        t_sample = ts.randn([2000])
+        sample_list = t_sample.tolist()
+        mean = sum(sample_list) / len(sample_list)
+        variance = sum((x - mean) ** 2 for x in sample_list) / len(sample_list)
+        assert abs(mean) < 0.15
+        assert 0.7 < variance < 1.3
+
+        # randn on non-floating types must raise an error
+        with pytest.raises(Exception, match="floating-point"):
+            ts.randn([2, 2], dtype=ts.int32)
+
     def test_dtype_variants(self) -> None:
         t_f32 = ts.empty([2, 2], dtype=ts.float32)
         assert "dtype=float32" in repr(t_f32)
