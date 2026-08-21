@@ -28,18 +28,37 @@ except ImportError as exc:
         "Please compile the C++ extension first by running `.\\scripts\\cpp.ps1`."
     ) from exc
 
+from typing import Sequence
+
 Tensor = _core.Tensor
 dtype = _core.dtype
 
+# 顶级导出常用 ScalarType 常量（对齐 PyTorch 用法）
+float32: _core.dtype = _core.dtype.float32
+float64: _core.dtype = _core.dtype.float64
+int32: _core.dtype = _core.dtype.int32
+int64: _core.dtype = _core.dtype.int64
+uint8: _core.dtype = _core.dtype.uint8
 
-def empty(shape: list[int], dtype_val: _core.dtype = _core.dtype.float32) -> Tensor:
+
+def empty(shape: Sequence[int], dtype: _core.dtype = _core.dtype.float32) -> Tensor:
     """Create an uninitialized Tensor with the specified shape and dtype."""
-    return Tensor.empty(shape, dtype_val)
+    return Tensor.empty(shape, dtype)
 
 
-def tensor(data: list[float]) -> Tensor:
-    """Construct a 1D Tensor from a Python float list."""
+def tensor(data: Sequence[float]) -> Tensor:
+    """Construct a 1D Tensor from a Python float sequence."""
     return Tensor(data)
 
 
-__all__ = ["Tensor", "dtype", "empty", "tensor"]
+__all__ = [
+    "Tensor",
+    "dtype",
+    "empty",
+    "tensor",
+    "float32",
+    "float64",
+    "int32",
+    "int64",
+    "uint8",
+]

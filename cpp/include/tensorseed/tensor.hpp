@@ -290,11 +290,16 @@ public:
       }
     }
     if (infer_idx != -1) {
-      if (total_elements % product != 0) {
+      if (product == 0 || total_elements % product != 0) {
         throw std::invalid_argument(
             "Shape mismatch for inferring dimension -1");
       }
       resolved_shape[infer_idx] = total_elements / product;
+    } else {
+      if (product != total_elements) {
+        throw std::invalid_argument(
+            "Shape mismatch in view: total elements do not match");
+      }
     }
     auto new_strides = TensorImpl::compute_contiguous_strides(resolved_shape);
     auto new_impl = std::make_shared<TensorImpl>(
@@ -325,16 +330,14 @@ public:
   }
 
 private:
-  void copy_to_contiguous(Tensor &dst) const {
-    // 根据任意步长深度拷贝到连续目标内存
+  template <typename T> void copy_to_contiguous_impl(Tensor &dst) const {
     int64_t total = numel();
     int64_t rank = ndim();
     const auto &s = shape();
     const auto &st = strides();
 
-    // 此处以 float 为例进行多维坐标映射演示 (通用情况可用模板或 switch 分发)
-    float *dst_ptr = dst.data_ptr<float>();
-    const float *src_base = impl_->data_ptr<float>();
+    T *dst_ptr = dst.data_ptr<T>();
+    const T *src_base = impl_->data_ptr<T>();
     std::vector<int64_t> coords(rank, 0);
     for (int64_t i = 0; i < total; ++i) {
       // 计算当前坐标对应非连续源数据的物理偏移量
@@ -350,6 +353,28 @@ private:
           break;
         coords[d] = 0;
       }
+    }
+  }
+
+  void copy_to_contiguous(Tensor &dst) const {
+    switch (dtype()) {
+    case ScalarType::Float32:
+      copy_to_contiguous_impl<float>(dst);
+      break;
+    case ScalarType::Float64:
+      copy_to_contiguous_impl<double>(dst);
+      break;
+    case ScalarType::Int32:
+      copy_to_contiguous_impl<int32_t>(dst);
+      break;
+    case ScalarType::Int64:
+      copy_to_contiguous_impl<int64_t>(dst);
+      break;
+    case ScalarType::UInt8:
+      copy_to_contiguous_impl<uint8_t>(dst);
+      break;
+    default:
+      throw std::runtime_error("Unsupported dtype in copy_to_contiguous");
     }
   }
   std::shared_ptr<TensorImpl> impl_{nullptr};

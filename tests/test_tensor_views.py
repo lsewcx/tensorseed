@@ -40,6 +40,12 @@ class TestTensorViewOperations:
         with pytest.raises(ValueError, match="Shape mismatch"):
             t.view([-1, 4])
 
+    def test_view_mismatch_without_infer_raises(self) -> None:
+        t = ts.empty([2, 3])  # total = 6
+        # Shape product != total_elements should fail
+        with pytest.raises(ValueError, match="total elements do not match"):
+            t.view([2, 4])
+
     def test_transpose_2d(self) -> None:
         t = ts.empty([2, 3])
         t_t = t.t()

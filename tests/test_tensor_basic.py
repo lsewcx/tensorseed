@@ -21,24 +21,30 @@ class TestTensorCreation:
         assert t.tolist() == data
 
     def test_empty_factory(self) -> None:
-        shape = [2, 3, 4]
-        t = ts.empty(shape, ts.dtype.float32)
+        shape = (2, 3, 4)
+        t = ts.empty(shape, dtype=ts.float32)
 
-        assert t.shape == shape
+        assert t.shape == [2, 3, 4]
         assert t.strides == [12, 4, 1]  # Standard row-major contiguous strides
         assert t.ndim == 3
         assert len(t) == 24
         assert t.is_contiguous is True
 
     def test_dtype_variants(self) -> None:
-        t_f32 = ts.empty([2, 2], ts.dtype.float32)
+        t_f32 = ts.empty([2, 2], dtype=ts.float32)
         assert "dtype=float32" in repr(t_f32)
 
-        t_i32 = ts.empty([2, 2], ts.dtype.int32)
+        t_f64 = ts.empty([2, 2], dtype=ts.float64)
+        assert "dtype=float64" in repr(t_f64)
+
+        t_i32 = ts.empty([2, 2], dtype=ts.int32)
         assert "dtype=int32" in repr(t_i32)
 
-        t_i64 = ts.empty([2, 2], ts.dtype.int64)
+        t_i64 = ts.empty([2, 2], dtype=ts.int64)
         assert "dtype=int64" in repr(t_i64)
+
+        t_u8 = ts.empty([2, 2], dtype=ts.uint8)
+        assert "dtype=uint8" in repr(t_u8)
 
     def test_repr_formatting(self) -> None:
         t = ts.tensor([1.0, 2.0])

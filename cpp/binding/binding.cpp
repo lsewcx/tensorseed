@@ -62,8 +62,34 @@ PYBIND11_MODULE(_core, m) {
           strides.push_back(s *
                             static_cast<py::ssize_t>(element_size(t.dtype())));
         }
-        return py::buffer_info(t.data_ptr<float>(), sizeof(float),
-                               py::format_descriptor<float>::format(),
+        std::string format;
+        size_t itemsize = element_size(t.dtype());
+        void *ptr = nullptr;
+        switch (t.dtype()) {
+        case ScalarType::Float32:
+          format = py::format_descriptor<float>::format();
+          ptr = t.data_ptr<float>();
+          break;
+        case ScalarType::Float64:
+          format = py::format_descriptor<double>::format();
+          ptr = t.data_ptr<double>();
+          break;
+        case ScalarType::Int32:
+          format = py::format_descriptor<int32_t>::format();
+          ptr = t.data_ptr<int32_t>();
+          break;
+        case ScalarType::Int64:
+          format = py::format_descriptor<int64_t>::format();
+          ptr = t.data_ptr<int64_t>();
+          break;
+        case ScalarType::UInt8:
+          format = py::format_descriptor<uint8_t>::format();
+          ptr = t.data_ptr<uint8_t>();
+          break;
+        default:
+          throw std::runtime_error("Unsupported dtype for buffer protocol");
+        }
+        return py::buffer_info(ptr, itemsize, format,
                                static_cast<py::ssize_t>(t.ndim()), shape,
                                strides);
       })
@@ -71,10 +97,32 @@ PYBIND11_MODULE(_core, m) {
       // 导出数据为 Python 列表
       .def(
           "tolist",
-          [](const Tensor &t) {
+          [](const Tensor &t) -> py::object {
             Tensor c = t.is_contiguous() ? t : t.contiguous();
-            const float *ptr = c.data_ptr<float>();
-            return std::vector<float>(ptr, ptr + c.numel());
+            switch (c.dtype()) {
+            case ScalarType::Float32: {
+              const float *ptr = c.data_ptr<float>();
+              return py::cast(std::vector<float>(ptr, ptr + c.numel()));
+            }
+            case ScalarType::Float64: {
+              const double *ptr = c.data_ptr<double>();
+              return py::cast(std::vector<double>(ptr, ptr + c.numel()));
+            }
+            case ScalarType::Int32: {
+              const int32_t *ptr = c.data_ptr<int32_t>();
+              return py::cast(std::vector<int32_t>(ptr, ptr + c.numel()));
+            }
+            case ScalarType::Int64: {
+              const int64_t *ptr = c.data_ptr<int64_t>();
+              return py::cast(std::vector<int64_t>(ptr, ptr + c.numel()));
+            }
+            case ScalarType::UInt8: {
+              const uint8_t *ptr = c.data_ptr<uint8_t>();
+              return py::cast(std::vector<uint8_t>(ptr, ptr + c.numel()));
+            }
+            default:
+              throw std::runtime_error("Unsupported dtype for tolist");
+            }
           },
-          "Return the tensor data as a flat Python list of floats");
+          "Return the tensor data as a flat Python list");
 }
