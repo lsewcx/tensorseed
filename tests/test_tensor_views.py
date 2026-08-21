@@ -1,4 +1,4 @@
-"""Tests for Tensor view operations, reshaping, and transposition."""
+﻿"""Tests for Tensor view operations, reshaping, and transposition."""
 
 from __future__ import annotations
 
@@ -53,6 +53,25 @@ class TestTensorViewOperations:
         assert t_t.shape == [3, 2]
         assert t_t.strides == [1, 3]  # Swapped strides, zero-copy
         assert t_t.is_contiguous is False
+
+    def test_double_transpose_is_identity(self) -> None:
+        t = ts.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]).view([2, 3])
+        t_double = t.t().t()
+        assert t_double.shape == [2, 3]
+        assert t_double.strides == [3, 1]
+        assert t_double.is_contiguous is True
+        assert t_double.tolist() == t.tolist()
+
+    def test_3d_transpose_and_negative_dims(self) -> None:
+        t = ts.empty([2, 3, 4])
+        # Transpose dim 0 and 2
+        t_swapped = t.transpose(0, 2)
+        assert t_swapped.shape == [4, 3, 2]
+        assert t_swapped.strides == [1, 4, 12]
+
+        # Negative dimension transpose
+        t_neg = t.transpose(-3, -1)
+        assert t_neg.shape == [4, 3, 2]
 
     def test_transpose_invalid_dimensions(self) -> None:
         t = ts.empty([2, 3])

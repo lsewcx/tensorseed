@@ -1,4 +1,4 @@
-"""Tests for Tensor creation, attributes, and basic conversions."""
+﻿"""Tests for Tensor creation, attributes, and basic conversions."""
 
 from __future__ import annotations
 
@@ -98,6 +98,25 @@ class TestTensorCreation:
         # randn on non-floating types must raise an error
         with pytest.raises(Exception, match="floating-point"):
             ts.randn([2, 2], dtype=ts.int32)
+
+    def test_zero_element_tensor(self) -> None:
+        t_zero = ts.zeros([0])
+        assert t_zero.shape == [0]
+        assert len(t_zero) == 0
+        assert t_zero.tolist() == []
+
+        t_zero_2d = ts.zeros([0, 5])
+        assert t_zero_2d.shape == [0, 5]
+        assert len(t_zero_2d) == 0
+        assert t_zero_2d.tolist() == []
+
+    def test_large_tensor_allocation(self) -> None:
+        # 10,000 elements tensor
+        t_large = ts.zeros([100, 100], dtype=ts.float32)
+        assert len(t_large) == 10000
+        assert t_large.shape == [100, 100]
+        assert t_large[0, 0] == 0.0
+        assert t_large[99, 99] == 0.0
 
     def test_dtype_variants(self) -> None:
         t_f32 = ts.empty([2, 2], dtype=ts.float32)
