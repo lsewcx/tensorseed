@@ -20,28 +20,31 @@ for _path in _SEARCH_PATHS:
     if _path.is_dir() and str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
-try:
-    import _core  # type: ignore[import-not-found]
-except ImportError as exc:
-    raise ImportError(
-        "Could not load the compiled C++ `_core` module. "
-        "Please compile the C++ extension first by running `.\\scripts\\cpp.ps1`."
-    ) from exc
+from typing import TYPE_CHECKING, Sequence
 
-from typing import Sequence
+if TYPE_CHECKING:
+    from ._core import Tensor, dtype
+else:
+    try:
+        import _core  # type: ignore[import-not-found]
+    except ImportError as exc:
+        raise ImportError(
+            "Could not load the compiled C++ `_core` module. "
+            "Please compile the C++ extension first by running `.\\scripts\\cpp.ps1`."
+        ) from exc
 
-Tensor = _core.Tensor
-dtype = _core.dtype
+    Tensor = _core.Tensor
+    dtype = _core.dtype
 
 # 顶级导出常用 ScalarType 常量（对齐 PyTorch 用法）
-float32: _core.dtype = _core.dtype.float32
-float64: _core.dtype = _core.dtype.float64
-int32: _core.dtype = _core.dtype.int32
-int64: _core.dtype = _core.dtype.int64
-uint8: _core.dtype = _core.dtype.uint8
+float32: dtype = dtype.float32
+float64: dtype = dtype.float64
+int32: dtype = dtype.int32
+int64: dtype = dtype.int64
+uint8: dtype = dtype.uint8
 
 
-def empty(shape: Sequence[int], dtype: _core.dtype = _core.dtype.float32) -> Tensor:
+def empty(shape: Sequence[int], dtype: dtype = float32) -> Tensor:
     """Create an uninitialized Tensor with the specified shape and dtype."""
     return Tensor.empty(shape, dtype)
 
@@ -51,17 +54,17 @@ def tensor(data: Sequence[float]) -> Tensor:
     return Tensor(data)
 
 
-def zeros(shape: Sequence[int], dtype: _core.dtype = _core.dtype.float32) -> Tensor:
+def zeros(shape: Sequence[int], dtype: dtype = float32) -> Tensor:
     """Create a zero-initialized Tensor with the specified shape and dtype."""
     return Tensor.zeros(shape, dtype)
 
 
-def ones(shape: Sequence[int], dtype: _core.dtype = _core.dtype.float32) -> Tensor:
+def ones(shape: Sequence[int], dtype: dtype = float32) -> Tensor:
     """Create a ones-initialized Tensor with the specified shape and dtype."""
     return Tensor.ones(shape, dtype)
 
 
-def randn(shape: Sequence[int], dtype: _core.dtype = _core.dtype.float32) -> Tensor:
+def randn(shape: Sequence[int], dtype: dtype = float32) -> Tensor:
     """Create a Tensor filled with random numbers from a standard normal distribution."""
     return Tensor.randn(shape, dtype)
 
